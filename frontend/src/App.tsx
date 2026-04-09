@@ -13,7 +13,7 @@ import ProjectsPanel from './components/ProjectsPanel'
 import HealthPanel from './components/HealthPanel'
 import AgentsPanel from './components/AgentsPanel'
 import ProfilesPanel from './components/ProfilesPanel'
-import PatternsPanel from './components/PatternsPanel'
+import TokenCostsPanel from './components/TokenCostsPanel'
 
 function TabContent({ tab }: { tab: TabId }) {
   switch (tab) {
@@ -26,7 +26,7 @@ function TabContent({ tab }: { tab: TabId }) {
     case 'health': return <HealthPanel />
     case 'agents': return <AgentsPanel />
     case 'profiles': return <ProfilesPanel />
-    case 'patterns': return <PatternsPanel />
+    case 'token-costs': return <TokenCostsPanel />
     default: return <DashboardPanel />
   }
 }
@@ -42,7 +42,7 @@ const GRID_CLASS: Record<TabId, string> = {
   health: 'grid-cols-1 sm:grid-cols-2',
   agents: 'grid-cols-1 lg:grid-cols-2',
   profiles: 'grid-cols-1',
-  patterns: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
+  'token-costs': 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
 }
 
 export default function App() {
