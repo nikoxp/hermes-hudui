@@ -15,6 +15,7 @@ export default function ChatPanel() {
     composerState,
     error,
     sendMessage,
+    cancelStream,
     loadHistory,
   } = useChat(activeSessionId)
 
@@ -131,6 +132,7 @@ export default function ChatPanel() {
               <MessageThread messages={messages} />
               <Composer
                 onSend={handleSendMessage}
+                onCancel={cancelStream}
                 isStreaming={isStreaming}
                 model={composerState.model}
               />

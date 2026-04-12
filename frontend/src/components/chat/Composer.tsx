@@ -2,12 +2,13 @@ import { useState, useRef, useEffect } from 'react'
 
 interface ComposerProps {
   onSend: (message: string) => void
+  onCancel?: () => void
   isStreaming: boolean
   model: string
   disabled?: boolean
 }
 
-export default function Composer({ onSend, isStreaming, model, disabled }: ComposerProps) {
+export default function Composer({ onSend, onCancel, isStreaming, model, disabled }: ComposerProps) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -65,26 +66,44 @@ export default function Composer({ onSend, isStreaming, model, disabled }: Compo
             maxHeight: '120px',
           }}
         />
-        <button
-          onClick={handleSubmit}
-          disabled={!input.trim() || isStreaming || disabled}
-          className="px-3 py-1.5 text-[13px] font-bold cursor-pointer disabled:opacity-40"
-          style={{
-            background: isStreaming ? 'var(--hud-bg-hover)' : 'var(--hud-primary)',
-            color: isStreaming ? 'var(--hud-text-dim)' : 'var(--hud-bg-deep)',
-            border: 'none',
-            minHeight: '32px',
-          }}
-        >
-          {isStreaming ? '...' : 'Send'}
-        </button>
+        {isStreaming ? (
+          <button
+            onClick={onCancel}
+            className="px-3 py-1.5 text-[13px] font-bold cursor-pointer"
+            style={{
+              background: 'var(--hud-error)',
+              color: 'var(--hud-bg-deep)',
+              border: 'none',
+              minHeight: '32px',
+            }}
+            title="Stop generation"
+          >
+            ■ Stop
+          </button>
+        ) : (
+          <button
+            onClick={handleSubmit}
+            disabled={!input.trim() || disabled}
+            className="px-3 py-1.5 text-[13px] font-bold cursor-pointer disabled:opacity-40"
+            style={{
+              background: 'var(--hud-primary)',
+              color: 'var(--hud-bg-deep)',
+              border: 'none',
+              minHeight: '32px',
+            }}
+          >
+            Send
+          </button>
+        )}
       </div>
       <div
         className="mt-1 text-[11px] flex justify-between"
         style={{ color: 'var(--hud-text-dim)' }}
       >
         <span>{model !== 'unknown' ? model : ''}</span>
-        <span>{isStreaming ? 'Streaming...' : ''}</span>
+        <span style={{ color: isStreaming ? 'var(--hud-warning)' : 'var(--hud-text-dim)' }}>
+          {isStreaming ? '● streaming' : 'Enter to send · Shift+Enter newline'}
+        </span>
       </div>
     </div>
   )

@@ -226,6 +226,17 @@ class ChatEngine:
 
         return streamer
 
+    def cancel_stream(self, session_id: str) -> None:
+        """Kill the active subprocess for a session, stopping the stream."""
+        if session_id in self._processes:
+            try:
+                self._processes[session_id].terminate()
+            except Exception:
+                pass
+
+        if session_id in self._streamers:
+            self._streamers[session_id].stop()
+
     def get_composer_state(self, session_id: str) -> ComposerState:
         """Get current composer state for UI."""
         session = self._sessions.get(session_id)

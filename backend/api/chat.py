@@ -170,6 +170,17 @@ async def stream_response(session_id: str) -> StreamingResponse:
         raise HTTPException(status_code=503, detail=str(e))
 
 
+@router.post("/sessions/{session_id}/cancel")
+async def cancel_stream(session_id: str) -> dict[str, str]:
+    """Cancel an active streaming response by killing the subprocess."""
+    session = chat_engine.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    chat_engine.cancel_stream(session_id)
+    return {"status": "cancelled", "session_id": session_id}
+
+
 @router.get("/sessions/{session_id}/history")
 async def get_history(session_id: str, limit: int = 50) -> list[dict[str, Any]]:
     """Get message history for a session from state.db."""

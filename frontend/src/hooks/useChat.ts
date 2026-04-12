@@ -264,6 +264,33 @@ export function useChat(sessionId: string | null) {
     )
   }
 
+  const cancelStream = useCallback(async () => {
+    if (!sessionId) return
+
+    // Close the SSE connection immediately
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
+
+    setIsStreaming(false)
+    // Mark the last assistant message as no longer streaming
+    setMessages(prev =>
+      prev.map((msg, i) =>
+        i === prev.length - 1 && msg.role === 'assistant' && msg.isStreaming
+          ? { ...msg, isStreaming: false, content: msg.content || '[cancelled]' }
+          : msg
+      )
+    )
+
+    // Tell the backend to kill the subprocess
+    try {
+      await fetch(`/api/chat/sessions/${sessionId}/cancel`, { method: 'POST' })
+    } catch {
+      // Best-effort — SSE already closed on frontend
+    }
+  }, [sessionId])
+
   const loadHistory = useCallback(async () => {
     // History is managed client-side via messageCacheRef.
     // The backend does not persist message history, so this is a no-op.
@@ -293,6 +320,7 @@ export function useChat(sessionId: string | null) {
     composerState,
     error,
     sendMessage,
+    cancelStream,
     loadHistory,
     loadComposerState,
   }
