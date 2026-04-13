@@ -60,7 +60,10 @@ EXPECTED_KEYS = [
     ("ANTHROPIC_API_KEY", "env", "Primary LLM provider"),
     ("OPENROUTER_API_KEY", "env", "OpenRouter fallback provider"),
     ("FIREWORKS_API_KEY", "env", "Fireworks AI provider"),
-    ("XAI_API_KEY", "env", "xAI / Grok API for X search"),
+    ("XAI_API_KEY", "env", "xAI / Grok provider"),
+    ("GOOGLE_AI_KEY", "env", "Google AI Studio / Gemini provider"),
+    ("MINIMAX_API_KEY", "env", "MiniMax provider"),
+    ("NOUS_API_KEY", "env", "Nous Portal provider"),
     ("TELEGRAM_BOT_TOKEN", "env", "Telegram gateway bot token"),
     ("ELEVENLABS_API_KEY", "env", "ElevenLabs TTS"),
 ]

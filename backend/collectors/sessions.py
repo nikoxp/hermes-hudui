@@ -59,6 +59,7 @@ def _do_collect_sessions(db_path: str) -> SessionsState:
                    reasoning_tokens, estimated_cost_usd, model_config
             FROM sessions
             WHERE source != 'tool'
+              AND parent_session_id IS NULL
             ORDER BY started_at DESC
         """)
 

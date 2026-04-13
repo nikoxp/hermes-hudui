@@ -64,6 +64,7 @@ MODEL_PRICING: dict[str, dict] = {
     # Xiaomi
     "mimo-v2-pro": {"input": 1.00, "output": 3.00, "cache_read": 0.20, "cache_write": 1.00, "reasoning": 1.00},
     # MiniMax
+    "minimax-m2.7": {"input": 0.20, "output": 1.20, "cache_read": 0.05, "cache_write": 0.20, "reasoning": 0.20},
     "minimax-m2.5": {"input": 0.12, "output": 0.99, "cache_read": 0.06, "cache_write": 0.12, "reasoning": 0.12},
     # Meta
     "llama-3.3-70b": _LLAMA,
@@ -99,7 +100,7 @@ def _get_pricing(model: str | None) -> tuple[dict, str]:
             return MODEL_PRICING[key], key
     # Check if it's a local/inference/free model (zero cost)
     lower = model.lower()
-    if any(kw in lower for kw in ("local", "localhost", ":free", "gemma", "nemotron")):
+    if any(kw in lower for kw in ("local", "localhost", ":free", "gemma", "nemotron", "mimo-free")):
         return _FREE, "local (free)"
     if _SMALL_MODEL_RE.search(lower):
         return _FREE, "local (free)"
@@ -128,16 +129,30 @@ async def get_token_costs():
 
     today = datetime.now().strftime("%Y-%m-%d")
 
-    # Query all sessions with model column
-    cur.execute("""
-        SELECT id, source, started_at, model,
-               message_count, tool_call_count,
-               input_tokens, output_tokens,
-               cache_read_tokens, cache_write_tokens,
-               reasoning_tokens
-        FROM sessions
-        ORDER BY started_at ASC
-    """)
+    # actual_cost_usd was added in hermes v0.9.0; fall back gracefully for
+    # older databases that don't have the column yet.
+    try:
+        cur.execute("""
+            SELECT id, source, started_at, model,
+                   message_count, tool_call_count,
+                   input_tokens, output_tokens,
+                   cache_read_tokens, cache_write_tokens,
+                   reasoning_tokens,
+                   actual_cost_usd
+            FROM sessions
+            ORDER BY started_at ASC
+        """)
+    except sqlite3.OperationalError:
+        cur.execute("""
+            SELECT id, source, started_at, model,
+                   message_count, tool_call_count,
+                   input_tokens, output_tokens,
+                   cache_read_tokens, cache_write_tokens,
+                   reasoning_tokens,
+                   NULL AS actual_cost_usd
+            FROM sessions
+            ORDER BY started_at ASC
+        """)
 
     # Per-model aggregation
     by_model: dict[str, dict] = {}
@@ -175,7 +190,8 @@ async def get_token_costs():
         }
 
         pricing, matched = _get_pricing(model)
-        cost = _calc_cost(tokens, pricing)
+        actual_cost = row["actual_cost_usd"]
+        cost = float(actual_cost) if actual_cost is not None else _calc_cost(tokens, pricing)
 
         # Per-model
         if model not in by_model:

@@ -57,8 +57,6 @@ def _detect_change_type(path: Path) -> list[str]:
     # Check for specific file types
     if name.endswith(".db"):
         return ["sessions", "patterns"]
-    if name == "corrections.json":
-        return ["corrections"]
     if name == "snapshots.json":
         return ["snapshots"]
 
