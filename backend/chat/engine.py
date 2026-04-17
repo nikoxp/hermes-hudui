@@ -243,56 +243,70 @@ class ChatEngine:
                 )
                 self._processes[session_id] = process
 
-                # Stream stdout line by line, filtering decoration
+                # Stream stdout in chunks; process complete lines through the
+                # decoration filter and emit partial trailing content immediately
+                # once real content has started (avoids waiting for \n).
                 started_content = False
                 in_warning_block = False
                 hermes_session_id = None
-                for line in iter(process.stdout.readline, b""):
-                    if streamer._stopped.is_set():
-                        break
-                    text = line.decode("utf-8", errors="replace")
+                line_buf = b""
+
+                def _process_line(raw_line: bytes) -> None:
+                    nonlocal started_content, in_warning_block, hermes_session_id
+                    text = raw_line.decode("utf-8", errors="replace")
                     stripped = text.strip()
 
-                    # Detect start of a multi-line warning block (⚠ ...)
                     if _WARNING_RE.match(stripped):
                         in_warning_block = True
-                        continue
-
-                    # A blank line or non-indented line ends the warning block
+                        return
                     if in_warning_block:
                         if not stripped:
                             in_warning_block = False
-                            continue
+                            return
                         if text[0] in (' ', '\t'):
-                            continue  # indented continuation — still in warning
-                        in_warning_block = False  # non-indented line — fall through
+                            return
+                        in_warning_block = False
 
-                    # Capture session ID for post-completion tool event query
                     m = _SESSION_ID_RE.match(stripped)
                     if m:
                         hermes_session_id = m.group(1)
-                        continue
-
-                    # Skip single-line decoration (box drawing, headers)
+                        return
                     if _is_decoration_line(text):
-                        continue
+                        return
 
-                    # Extract content from │ ... │ box lines
                     box_inner = _extract_box_content(text)
                     if box_inner is not None:
                         if box_inner:
                             text = box_inner + "\n"
                             stripped = text.strip()
                         else:
-                            continue  # empty box line
+                            return
 
-                    # Skip leading empty lines before content starts
                     if not started_content and not stripped:
-                        continue
+                        return
 
                     started_content = True
-
                     streamer.emit_token(text)
+
+                while True:
+                    if streamer._stopped.is_set():
+                        break
+                    try:
+                        chunk = process.stdout.read1(4096)
+                    except Exception:
+                        break
+                    if not chunk:
+                        break
+
+                    line_buf += chunk
+                    # Process all complete lines
+                    while b"\n" in line_buf:
+                        line, line_buf = line_buf.split(b"\n", 1)
+                        _process_line(line + b"\n")
+
+                # Flush any remaining partial line
+                if line_buf:
+                    _process_line(line_buf)
 
                 process.wait()
 

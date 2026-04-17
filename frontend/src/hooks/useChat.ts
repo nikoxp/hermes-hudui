@@ -97,7 +97,7 @@ export function useChat(sessionId: string | null) {
 
   const { messages, status, error, sendMessage, stop, setMessages, regenerate } = useAiChat({
     transport,
-    experimental_throttle: 50,
+    experimental_throttle: 16,
     onFinish: ({ messages: finishedMessages }) => {
       const sid = sessionIdRef.current
       if (sid) saveMessages(sid, finishedMessages)
