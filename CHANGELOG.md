@@ -6,6 +6,35 @@ All notable changes to hermes-hudui are documented here.
 
 ---
 
+## [0.6.0] — 2026-04-24
+
+### Added
+- **Providers tab** — read-only view of connected OAuth and API-key providers from `~/.hermes/auth.json` (Nous, Anthropic, OpenAI Codex, OpenRouter, Z.AI, and any others hermes writes). Shows per-provider status (connected / expiring / expired / missing), masked token preview, expires/obtained relative time, scope, auth mode, and an ACTIVE badge for the currently selected provider.
+- **Gateway tab** — live gateway status pulled from `~/.hermes/gateway_state.json` (state, PID with liveness + zombie detection, active agents, per-platform connection state, exit reason) plus two action buttons wired end-to-end: "Restart gateway" shells out to `hermes gateway restart`, "Update hermes" to `hermes update`. Each action spawns detached via `subprocess.Popen`, tees output to `~/.hermes/logs/hud/<action>.log`, and the frontend polls `GET /api/actions/<name>/status` every second, streaming the log tail and final exit code.
+- **Model tab** — live capabilities for the current model, derived from `~/.hermes/models_dev_cache.json` + `config.yaml`. Capability badges (Tools / Vision / Reasoning / Structured Output), context window breakdown (auto from models.dev vs config override vs effective), max output tokens, per-1M-token pricing, release date, and knowledge cutoff.
+
+### Changed
+- **Sessions panel now shows model names again** — hermes v0.10+ moved the model ID from `model_config` JSON to a dedicated `model` column, so the collector now reads it directly (with a fallback to `model_config` for older DB rows).
+- **Chat tool calls and reasoning are captured again** — hermes v0.10+ prints `session_id` to stderr instead of stdout, so the chat engine now drains stderr concurrently via a background thread. Non-session-id stderr lines are surfaced as error output on non-zero exit.
+- **`collectors.utils.parse_timestamp`** now handles millisecond-epoch values and strips timezone info so naive-local datetimes compare cleanly against `datetime.now()`. Two collector-local duplicates of that logic have been removed.
+
+### Fixed
+- **gpt-5.5 pricing entry** — previously fell back to the $0/$0 "unpriced" default. Now maps to the Codex OAuth tier so session costs render non-zero. Follow-up: the models.dev entry lists $5/$30/1M for gpt-5.5; the HUD pricing table could be re-synced to models.dev as a later pass.
+
+### Notes
+- All three new tabs are read/observer-first — no session-token middleware yet. Action endpoints (`POST /api/gateway/restart`, `POST /api/hermes/update`) bind to `127.0.0.1` by default, matching the rest of the HUD's risk model.
+- Interactive OAuth flows (PKCE browser redirect, device-code polling) are out of scope for this release and planned for v0.7.
+
+---
+
+## [0.5.1] — 2026-04-24
+
+### Fixed
+- **High CPU from file watcher** — watchfiles polled every 300ms over the entire `~/.hermes/` tree, which pegged a core when `state.db` is large and actively written by a running agent. Bumped `poll_delay_ms` to 2000ms (aligned with the 5s broadcast throttle) and excluded `state.db` / `state.db-wal` / `state.db-shm` / `state.db-journal` via a dedicated filter. `force_polling=True` is retained so NFS / WSL1 / VM / Docker-bind-mount setups keep working. Thanks to @louie0609c for the root-cause analysis. Closes #22.
+- **Broken `install.sh` version print** — replaced the invalid `node -version` with `node --version` (thanks @CrayonL).
+
+---
+
 ## [0.5.0] — 2026-04-17
 
 ### Added
