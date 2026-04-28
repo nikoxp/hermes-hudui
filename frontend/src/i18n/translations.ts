@@ -248,6 +248,8 @@ export const translations = {
     'cron.createWorkdir': 'Workdir',
     'cron.createSubmit': 'Create',
     'cron.createScheduleRequired': 'Schedule cannot be empty.',
+    'cron.createIntervalInvalid': 'Custom interval needs a number.',
+    'cron.createCronInvalid': 'Cron expression must have 5 fields.',
     'cron.createRepeatInvalid': 'Repeat must be a positive whole number.',
     'cron.createWorkdirInvalid': 'Workdir must be an absolute path.',
 
@@ -688,6 +690,8 @@ export const translations = {
     'cron.createWorkdir': '工作目录',
     'cron.createSubmit': '创建',
     'cron.createScheduleRequired': '调度不能为空。',
+    'cron.createIntervalInvalid': '自定义间隔需要填写数字。',
+    'cron.createCronInvalid': 'Cron 表达式必须包含 5 个字段。',
     'cron.createRepeatInvalid': '重复次数必须是正整数。',
     'cron.createWorkdirInvalid': '工作目录必须是绝对路径。',
 

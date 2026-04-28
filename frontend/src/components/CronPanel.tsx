@@ -106,6 +106,10 @@ function getSchedule(form: CreateCronForm) {
   return `${form.intervalValue.trim()}${form.intervalUnit}`
 }
 
+function isValidCronExpr(value: string) {
+  return value.trim().split(/\s+/).length === 5
+}
+
 function FieldLabel({ children }: { children: string }) {
   return (
     <label className="block uppercase tracking-wider text-[10px] mb-1" style={{ color: 'var(--hud-text-dim)' }}>
@@ -118,7 +122,7 @@ function CronCreateDrawer({
   onCreate,
   onCancel,
 }: {
-  onCreate: () => void
+  onCreate: () => void | Promise<void>
   onCancel: () => void
 }) {
   const { t } = useTranslation()
@@ -138,6 +142,12 @@ function CronCreateDrawer({
 
   const validate = () => {
     if (!schedule) return t('cron.createScheduleRequired')
+    if (form.scheduleMode === 'interval' && form.intervalPreset === 'custom' && !form.intervalValue.trim()) {
+      return t('cron.createIntervalInvalid')
+    }
+    if (form.scheduleMode === 'cron' && !isValidCronExpr(form.cronExpr)) {
+      return t('cron.createCronInvalid')
+    }
     if (form.repeat.trim() && (!Number.isInteger(Number(form.repeat)) || Number(form.repeat) < 1)) {
       return t('cron.createRepeatInvalid')
     }
@@ -159,7 +169,7 @@ function CronCreateDrawer({
     try {
       await createCronJob(form)
       setForm(defaultForm)
-      onCreate()
+      await onCreate()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {

@@ -104,6 +104,8 @@ async def get_cron():
 
 @router.post("/cron")
 def create_job(body: CreateCronBody):
+    # Trust boundary: creating cron jobs can schedule Hermes to run in arbitrary workdirs.
+    # Keep this HUD API bound to trusted localhost-only access.
     _run_create(body)
     return {"status": "ok"}
 
