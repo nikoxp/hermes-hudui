@@ -6,6 +6,20 @@ All notable changes to hermes-hudui are documented here.
 
 ---
 
+## [0.7.0] — 2026-04-29
+
+### Added
+- **Cron job creation UI** — `POST /api/cron` endpoint plus a "Create Job" drawer in the Cron tab. Supports interval presets (30m / 1h / 2h / 24h / custom) or raw cron expressions with a live schedule preview, optional name, prompt, repeat count, delivery target (local / origin / telegram / discord / signal / custom `platform:chat_id`), and an Advanced section for skills, script, and absolute workdir. Validation is mirrored client- and server-side: schedule required, `repeat` must be a positive integer, `workdir` must be absolute, and custom interval values must be non-empty. The hermes CLI is invoked via argv (no shell). E2E coverage in `tests/e2e/cron-create.js`.
+- **Profile editing UI** — `GET /api/profiles/options`, `GET /api/profiles/{name}/edit`, and `PUT /api/profiles/{name}/edit` endpoints expose hermes profile config (model, providers, skills, soul, and runtime settings). The Profiles tab now includes an inline editor with atomic, lock-protected writes (`fcntl.flock` + `tempfile.mkstemp` + `os.replace`) matching the rest of the HUD's mutation pattern. E2E coverage in `tests/e2e/profile-edit.js`.
+
+### Fixed
+- **Delete-button busy state on the Cron tab** — busy key for `DELETE /api/cron/{id}` was previously `id:null`, so the spinner never matched `isBusy('delete')`. The action key now resolves to `'delete'` and the spinner renders correctly.
+
+### Notes
+- Both new mutation endpoints inherit the HUD's localhost-trusted threat model. If you expose hermes-hudui beyond loopback, treat `POST /api/cron` and `PUT /api/profiles/{name}/edit` as RCE-equivalent surfaces (they spawn `hermes` and write profile files respectively).
+
+---
+
 ## [0.6.0] — 2026-04-24
 
 ### Added
